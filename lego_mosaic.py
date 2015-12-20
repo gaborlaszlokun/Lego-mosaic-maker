@@ -31,11 +31,11 @@ colorList.append((0,85,191)) # BLUE
 colorList.append((90,147,219)) # MEDIUM BLUE
 colorList.append((242,205,55)) # YELLOW
 
-
 """" Input"""
 img = Image.open("me.jpg")
 
 wid = 200 # width in pixels
+
 wpercent = (wid/float(img.size[0]))
 hsize = int((float(img.size[1])*float(wpercent)))
 hsize = hsize - (hsize % 2)
@@ -47,8 +47,6 @@ def euclideanDistance(instance1, instance2, length):
 	for x in range(length):
 		distance += pow((instance1[x] - instance2[x]), 2)
 	return math.sqrt(distance)
-
-
 
 def getColor(color):    
     dists = []
@@ -66,7 +64,6 @@ for i in range(img.size[0]):
             color = (r, g, b)
             newcolor = getColor(color)
             pixels[i,j] = newcolor
-
 
 def plater():
     for i in range(0,img.size[0],5):
@@ -96,7 +93,6 @@ def tiler():
 
 plater() # using only 1x1 plates
 #tiler() # using only 1x1 tiles
-
 
 c = 0
 for i in range(0,img.size[0],5):
