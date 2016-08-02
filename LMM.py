@@ -7,7 +7,6 @@ Created on Tue Aug 02 13:00:56 2016
 
 import PIL
 from PIL import Image
-import init_colors as IC
 import math
 import numpy as np
 import operator 
@@ -112,7 +111,7 @@ def euclideanDistance(instance1, instance2, length):
 
 
 def getColor(color):
-    colorList = IC.full_color_list()    
+    colorList = full_color_list()    
     dists = []
     for i in colorList:
                 dists.append((i,euclideanDistance(color, i, 3)))
