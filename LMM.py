@@ -31,7 +31,7 @@ def full_color_list():
     colorList.append((187,233,11)) # LIME
     colorList.append((155,154,90)) # OLIVE GREEN
     colorList.append((201,26,9)) # RED
-    colorList.append((88,42,18)) # REDDIH BROWN
+    colorList.append((88,42,18)) # REDDISH BROWN
 #    colorList.append((228,173,200)) # BRIGHT PINK
     return colorList
     
@@ -145,24 +145,24 @@ def reduce_partlist(filename, img, plate_wid, plate_height, tile_plate):
     
     colors = [  
     ((9,19,29), 0), # BLACK
-    ((255,255,255), 15), # WHITE
-    ((108,110,104), 72), # DARK BLUISH GRAY
-    ((160,165,169), 71),# LIGHT BLUISH GRAY
-    ((228,205,158), 19), # TAN
-    ((149,138,115), 28), # DARK TAN
     ((0,85,191), 1), # BLUE
-    ((90,147,219), 73), # MEDIUM BLUE
-    ((242,205,55), 14), # YELLOW
-    ((114,14,15), 320), # DARK RED
-    ((172,120,186), 30), # MEDIUM LAVENDER
-    ((170,127,46), 297), # PEARL GOLD
-    ((160,188,172), 378), # SAND GREEN
-    ((24,70,50), 288), # DARK GREEN
     ((35,120,65), 2), # GREEN
-    ((187,233,11), 27), # LIME
-    ((155,154,90), 326), # OLIVE GREEN
     ((201,26,9), 4), # RED
-    ((88,42,18), 70), # REDDIH BROWN
+    ((242,205,55), 14), # YELLOW
+    ((255,255,255), 15), # WHITE
+    ((228,205,158), 19), # TAN
+    ((187,233,11), 27), # LIME
+    ((149,138,115), 28), # DARK TAN
+    ((172,120,186), 30), # MEDIUM LAVENDER
+     ((88,42,18), 70), # REDDISH BROWN
+    ((160,165,169), 71),# LIGHT BLUISH GRAY
+    ((108,110,104), 72), # DARK BLUISH GRAY
+    ((90,147,219), 73), # MEDIUM BLUE
+    ((24,70,50), 288), # DARK GREEN
+    ((170,127,46), 297), # PEARL GOLD
+    ((114,14,15), 320), # DARK RED
+    ((155,154,90), 326), # OLIVE GREEN
+    ((160,188,172), 378), # SAND GREEN
 #    ((228,173,200), 29) # BRIGHT PINK
     ]
     ldr_name = filename.replace(".jpg",".ldr")
@@ -176,15 +176,33 @@ def reduce_partlist(filename, img, plate_wid, plate_height, tile_plate):
             cntr += 1
     for item in range(0,len(picture), num_wid):
         line = picture[item: item + num_wid]
-        divs = [12, 10, 8, 6, 4, 3, 2] # Array with common Lego-lenghts
+#        divs = [12, 10, 8, 6, 4, 3, 2] # Array with common Lego-lenghts
+        # TODO: kiszervezni fájlba!
+        # Original color/ part pairs
+        divs = [(12, (0, 4, 14, 15, 19, 70, 71, 72)),
+                (10, (0, 1, 2, 4, 14, 15, 19, 70, 71, 72)),
+                (8, (0, 1, 2, 4, 14, 15, 19, 27, 30, 70, 71, 72)),
+                (6, (0, 1, 2, 4, 14, 15, 19, 27, 28, 30, 70, 71, 72, 73, 288, 320)),
+                (4, (0, 1, 2, 4, 14, 15, 19, 27, 28, 30, 70, 71, 72, 73, 288, 320, 378)),
+                (3, (0, 1, 2, 4, 14, 15, 19, 27, 28, 70, 71, 72, 73, 288, 320, 378)),
+                (2, (0, 1, 2, 4, 14, 15, 19, 27, 28, 30, 70, 71, 72, 73, 288, 320, 326, 378))] # Array with common Lego-lenghts
+
+        # Itt cseréli az RGB értékeket MlCad színkódokra
+        for part in range(len(line)):
+            for color in range(len(colors)):
+                if line[part][0] == colors[color][0]:
+                    line[part] = (colors[color][1], line[part][1])
         
         for div in divs:
+            color = div[1]
+            div = div[0]
             for p in range(len(line) - (div - 1)):
                 if len(line) > div:
                     part = line[p:p + div]
                     if len(part) > 0:
                         if part.count(part[0]) == div and part[0][1] == 1:
-                            line[p:p + div] = [(line[p][0], div)]
+                            if part[0][0] in color:
+                                line[p:p + div] = [(line[p][0], div)]
         print len(line), item / num_wid
         
         for part in range(len(line)):
@@ -193,9 +211,9 @@ def reduce_partlist(filename, img, plate_wid, plate_height, tile_plate):
                 if line[part][1] == parts[partname][0]:
                     line[part] = (line[part][0], line[part][1], parts[partname][1])
             # Itt cseréli az RGB értékeket MlCad színkódokra
-            for color in range(len(colors)):
-                if line[part][0] == colors[color][0]:
-                    line[part] = (colors[color][1], line[part][1], line[part][2])
+#            for color in range(len(colors)):
+#                if line[part][0] == colors[color][0]:
+#                    line[part] = (colors[color][1], line[part][1], line[part][2])
                     
             print line[part]
         

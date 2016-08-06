@@ -37,24 +37,24 @@ def reduce_partlist(image, plate_wid, plate_height, tile_plate):
     
     colors = [  
     ((9,19,29), 0), # BLACK
-    ((255,255,255), 15), # WHITE
-    ((108,110,104), 72), # DARK BLUISH GRAY
-    ((160,165,169), 71),# LIGHT BLUISH GRAY
-    ((228,205,158), 19), # TAN
-    ((149,138,115), 28), # DARK TAN
     ((0,85,191), 1), # BLUE
-    ((90,147,219), 73), # MEDIUM BLUE
-    ((242,205,55), 14), # YELLOW
-    ((114,14,15), 320), # DARK RED
-    ((172,120,186), 30), # MEDIUM LAVENDER
-    ((170,127,46), 297), # PEARL GOLD
-    ((160,188,172), 378), # SAND GREEN
-    ((24,70,50), 288), # DARK GREEN
     ((35,120,65), 2), # GREEN
-    ((187,233,11), 27), # LIME
-    ((155,154,90), 326), # OLIVE GREEN
     ((201,26,9), 4), # RED
-    ((88,42,18), 70), # REDDIH BROWN
+    ((242,205,55), 14), # YELLOW
+    ((255,255,255), 15), # WHITE
+    ((228,205,158), 19), # TAN
+    ((187,233,11), 27), # LIME
+    ((149,138,115), 28), # DARK TAN
+    ((172,120,186), 30), # MEDIUM LAVENDER
+     ((88,42,18), 70), # REDDISH BROWN
+    ((160,165,169), 71),# LIGHT BLUISH GRAY
+    ((108,110,104), 72), # DARK BLUISH GRAY
+    ((90,147,219), 73), # MEDIUM BLUE
+    ((24,70,50), 288), # DARK GREEN
+    ((170,127,46), 297), # PEARL GOLD
+    ((114,14,15), 320), # DARK RED
+    ((155,154,90), 326), # OLIVE GREEN
+    ((160,188,172), 378), # SAND GREEN
 #    ((228,173,200), 29) # BRIGHT PINK
     ]
     ldr_name = str(image).replace(".jpg",".ldr")
@@ -68,15 +68,18 @@ def reduce_partlist(image, plate_wid, plate_height, tile_plate):
             cntr += 1
     for item in range(0,len(picture), num_wid):
         line = picture[item: item + num_wid]
-        # TODO: kiszervezni fájlba!
-        divs = [(12, (0, 1, 71)),
-                (10, (0, 1)),
-                (8, (0, 1)),
-                (6, (0, 1)),
-                (4, (0, 1, 19)),
-                (3, (0, 1, 2, 288)),
-                (2, (0, 1, 2, 288))] # Array with common Lego-lenghts
-
+        # TODO: refactor me pls
+        divs = []
+        cols = open("original.col", "r")
+        alldiv = cols.read()
+        cols.close()
+        alldiv = alldiv.split("\n")
+        for lin in alldiv:
+            lens = ()
+            for  length in lin.split("  ")[1].split(" "):
+                lens += (int(length),)
+            divs.append((int(lin.split("  ")[0]), (lens)))
+            
         # Itt cseréli az RGB értékeket MlCad színkódokra
         for part in range(len(line)):
             for color in range(len(colors)):
@@ -128,6 +131,6 @@ def reduce_partlist(image, plate_wid, plate_height, tile_plate):
 
 # Usage
 #img = "tile_20_me.jpg"
-img = "tile_20_me_mod.jpg"
+img = "tile_20_me.jpg"
 #reduce_partlist(img, 30, 12)
 reduce_partlist(img, 30, 30, True)
