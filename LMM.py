@@ -9,6 +9,7 @@ import PIL
 from PIL import Image
 import math
 import numpy as np
+import pandas as pd
 import operator 
 
 def full_color_list():
@@ -113,7 +114,9 @@ def euclideanDistance(instance1, instance2, length):
 
 
 def getColor(color):
-    colorList = full_color_list()    
+    colorList = full_color_list()   
+#    colorList = grayscale_color_list()
+#    colorList = bw_color_list()
     dists = []
     for i in colorList:
                 dists.append((i,euclideanDistance(color, i, 3)))
@@ -122,6 +125,7 @@ def getColor(color):
 
 # Függvény, ami beolvassa a már legenerált képfájlt és elkészíti a redukált alkatrészlistát / MlCad fájlt
 def reduce_partlist(filename, img, plate_wid, plate_height, tile_plate):
+    print plate_wid, plate_height
     if tile_plate == False:
         inner = " 0 1 0 0 0 1 0 0 0 1 "
         y_step = 8
@@ -168,25 +172,32 @@ def reduce_partlist(filename, img, plate_wid, plate_height, tile_plate):
     ldr_name = filename.replace(".jpg",".ldr")
     mlcad = '0 Untitled\n0 Name: ' + ldr_name + '\n0 Author: LDraw\n0 Unofficial Model\n0 ROTATION CENTER 0 0 0 1 "Custom" \n0 ROTATION CONFIG 0 0\n'   
     
-    full = 0
+    
     y = 0
+    
+    # MlCad DataFrame inicializálása
+    columns = ['color', 'x', 'y', 'inner', 'partcode']
+    mlcad_df = pd.DataFrame(columns=columns)
+    index = 0    
+    
     for j in range(0,img.size[1],plate_height):
         for i in range(0,img.size[0],plate_wid):
             picture.append((pixels[i,j], 1))
             cntr += 1
     for item in range(0,len(picture), num_wid):
         line = picture[item: item + num_wid]
-#        divs = [12, 10, 8, 6, 4, 3, 2] # Array with common Lego-lenghts
-        # TODO: kiszervezni fájlba!
-        # Original color/ part pairs
-        divs = [(12, (0, 4, 14, 15, 19, 70, 71, 72)),
-                (10, (0, 1, 2, 4, 14, 15, 19, 70, 71, 72)),
-                (8, (0, 1, 2, 4, 14, 15, 19, 27, 30, 70, 71, 72)),
-                (6, (0, 1, 2, 4, 14, 15, 19, 27, 28, 30, 70, 71, 72, 73, 288, 320)),
-                (4, (0, 1, 2, 4, 14, 15, 19, 27, 28, 30, 70, 71, 72, 73, 288, 320, 378)),
-                (3, (0, 1, 2, 4, 14, 15, 19, 27, 28, 70, 71, 72, 73, 288, 320, 378)),
-                (2, (0, 1, 2, 4, 14, 15, 19, 27, 28, 30, 70, 71, 72, 73, 288, 320, 326, 378))] # Array with common Lego-lenghts
-
+        # Original color/ part pairs from file
+        divs = []
+        f = open("original_plates.col", "r")
+        original_colors = f.read()
+        f.close()
+        original_colors = original_colors.split("\n")
+        for color_line in original_colors:
+            color_codes = ()
+            for  color_code in color_line.split("  ")[1].split(" "):
+                color_codes += (int(color_code),)
+            divs.append((int(color_line.split("  ")[0]), (color_codes)))        
+        
         # Itt cseréli az RGB értékeket MlCad színkódokra
         for part in range(len(line)):
             for color in range(len(colors)):
@@ -203,7 +214,7 @@ def reduce_partlist(filename, img, plate_wid, plate_height, tile_plate):
                         if part.count(part[0]) == div and part[0][1] == 1:
                             if part[0][0] in color:
                                 line[p:p + div] = [(line[p][0], div)]
-        print len(line), item / num_wid
+#        print len(line), item / num_wid
         
         for part in range(len(line)):
             # Itt cseréli ki a hosszakat érvényes Lego elemkódokra
@@ -214,27 +225,81 @@ def reduce_partlist(filename, img, plate_wid, plate_height, tile_plate):
 #            for color in range(len(colors)):
 #                if line[part][0] == colors[color][0]:
 #                    line[part] = (colors[color][1], line[part][1], line[part][2])
-                    
-            print line[part]
         
         # TODO: Itt történik meg a tényleges ldr generálása
-        x = 0        
+        #  Itt történik meg a tényleges ldr generálása
+        x = 0
         for part in range(len(line)):
             color = str(line[part][0])
             x += line[part][1] * 10
             partcode = line[part][2]
-            mlcad_line = "1 " + color + " " + str(x) + " " + str(y) + inner + partcode + "\n"
-            mlcad += mlcad_line
+            # Minden sorből DataFrame-t generál és hozzáadja az eredeti df-hez
+            mlcad_line_df = pd.DataFrame([[color, x, y, inner, partcode]], columns=columns, index = [index])
+            index += 1
+            mlcad_df = mlcad_df.append(mlcad_line_df)
+            # Az mlcad_line-t csak a DataFrame átalakítása után kell összeállítani! Itt több függvény is kell.
+#            mlcad_line = "1 " + color + " " + str(x) + " " + str(y) + inner + partcode + "\n"
+#            mlcad += mlcad_line
             x += line[part][1] * 10
             
         y += y_step   
            
-        print
-        full += len(line)
+    # Itt áll rendelkezésre az egész df, innentől kell redukálni!
+    mlcad_df = mlcad_df.sort_values(['x', 'y']).reset_index(drop=True)
+    
     print img.size[0], "x", img.size[1]
-    print cntr, "db alkatrész kell"
-    print full, "a redukált alkatrészszám"
+    print cntr, "db alkatrész kell eredetileg"
+    print len(mlcad_df), "a redukált alkatrészszám a sorok összevonása után"
+    # Működési javaslat: partcode szerint rész df-re vágni és úgy kezelni!
+    
+   # Kiválasztja a megfelelő függvény(eke)t a bővebb finomításhoz
+    if tile_plate == False:
+        mlcad_df = reduce_with_bricks(mlcad_df)
+        # TODO: pattern search
+    else:
+        # TODO: csempefelosztó fv.
+        print "csempeszoba"
+  
+    # MlCad fájl sorait összeállító és a fájlt legeneráló rész
+    for pos in range(len(mlcad_df)):
+        mlcad_line = "1 " + str(mlcad_df.iat[pos,0]) + " " + str(mlcad_df.iat[pos,1]) + " " + str(mlcad_df.iat[pos,2]) + str(mlcad_df.iat[pos,3]) + mlcad_df.iat[pos,4] + "\n"
+        mlcad += mlcad_line
+    
     mlcad += "0"
-    text = open(ldr_name, "w")
-    text.write(mlcad)
-    text.close()
+    print len(mlcad_df), "a redukált alkatrészszám"
+    ldr = open(ldr_name, "w")
+    ldr.write(mlcad)
+    ldr.close()
+    
+# Egymás alatti hármas csoportokat von össze brick-ké, csak alavető egyezést vizsgál
+def reduce_with_bricks(mlcad_df):
+    # Feltöltés valós brick/color értékekkel, megfelelő formára hozás
+    # TODO: valós szín rendelkezésre állást ellenőrizni!
+    replace_parts = []
+    f = open("original_bricks.col", "r")
+    original_brick_colors = f.read()
+    f.close()
+    original_brick_colors = original_brick_colors.split("\n")
+    for brick_color_line in original_brick_colors:
+        brick_color_codes = ()
+        for  brick_color_code in brick_color_line.split("  ")[1].split(" "):
+            brick_color_codes += (int(brick_color_code),)
+        replace_parts.append((brick_color_line.split("  ")[0].split(" ")[0], brick_color_line.split("  ")[0].split(" ")[1], (brick_color_codes)))
+
+    # Iteráció az elemkódokon, majd elemkódok szerint két részre vágja a df-et
+    # Végül a törlendő elemeket eldobja, a két részt pedig összeilleszti      
+    for rep in range(len(replace_parts)):
+        part1_mlcad_df = mlcad_df[mlcad_df['partcode'] == replace_parts[rep][1]]
+        part2_mlcad_df = mlcad_df[mlcad_df['partcode'] != replace_parts[rep][1]]
+        for pos in range(len(part1_mlcad_df) - 2):
+            if part1_mlcad_df.iat[pos,4] == replace_parts[rep][1]:
+                if part1_mlcad_df.iat[pos,2] + 8 == part1_mlcad_df.iat[pos + 1 ,2] and (part1_mlcad_df.iat[pos,2] + 16 == part1_mlcad_df.iat[pos + 2 ,2]):
+                    if part1_mlcad_df.iat[pos,1] == part1_mlcad_df.iat[pos + 1 ,1] and (part1_mlcad_df.iat[pos,1] == part1_mlcad_df.iat[pos + 2 ,1]):
+                        if part1_mlcad_df.iat[pos,0] == part1_mlcad_df.iat[pos + 1,0] and (part1_mlcad_df.iat[pos,0] == part1_mlcad_df.iat[pos + 2,0]):
+                            if int(part1_mlcad_df.iat[pos,0]) in replace_parts[rep][2]:
+                                part1_mlcad_df.iat[pos,4] = replace_parts[rep][0]
+                                part1_mlcad_df.iat[pos + 1,4] = "zero"
+                                part1_mlcad_df.iat[pos + 2,4] = "zero"
+        mlcad_df = part1_mlcad_df.append(part2_mlcad_df)
+        mlcad_df = mlcad_df[mlcad_df['partcode'] != 'zero']
+    return mlcad_df
