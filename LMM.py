@@ -214,19 +214,12 @@ def reduce_partlist(filename, img, plate_wid, plate_height, tile_plate):
                         if part.count(part[0]) == div and part[0][1] == 1:
                             if part[0][0] in color:
                                 line[p:p + div] = [(line[p][0], div)]
-#        print len(line), item / num_wid
         
         for part in range(len(line)):
             # Itt cseréli ki a hosszakat érvényes Lego elemkódokra
             for partname in range(len(parts)):
                 if line[part][1] == parts[partname][0]:
                     line[part] = (line[part][0], line[part][1], parts[partname][1])
-            # Itt cseréli az RGB értékeket MlCad színkódokra
-#            for color in range(len(colors)):
-#                if line[part][0] == colors[color][0]:
-#                    line[part] = (colors[color][1], line[part][1], line[part][2])
-        
-        # TODO: Itt történik meg a tényleges ldr generálása
         #  Itt történik meg a tényleges ldr generálása
         x = 0
         for part in range(len(line)):
@@ -237,9 +230,6 @@ def reduce_partlist(filename, img, plate_wid, plate_height, tile_plate):
             mlcad_line_df = pd.DataFrame([[color, x, y, inner, partcode]], columns=columns, index = [index])
             index += 1
             mlcad_df = mlcad_df.append(mlcad_line_df)
-            # Az mlcad_line-t csak a DataFrame átalakítása után kell összeállítani! Itt több függvény is kell.
-#            mlcad_line = "1 " + color + " " + str(x) + " " + str(y) + inner + partcode + "\n"
-#            mlcad += mlcad_line
             x += line[part][1] * 10
             
         y += y_step   
@@ -271,7 +261,7 @@ def reduce_partlist(filename, img, plate_wid, plate_height, tile_plate):
     ldr.write(mlcad)
     ldr.close()
     
-# Egymás alatti hármas csoportokat von össze brick-ké, csak alavető egyezést vizsgál
+# Egymás alatti hármas csoportokat von össze brick-ké, csak alapvető egyezést vizsgál
 def reduce_with_bricks(mlcad_df):
     # Feltöltés valós brick/color értékekkel, megfelelő formára hozás
     # TODO: valós szín rendelkezésre állást ellenőrizni!
