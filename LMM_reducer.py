@@ -25,17 +25,11 @@ def reduce_partlist(image, plate_wid, plate_height, tile_plate):
     num_wid = img.size[0] / plate_wid
     pixels = img.load() # create the pixel map
     cntr = 0
-    picture = []
+    picture = []  
     
-    parts = [(1, "3024.dat"),
-             (2, "3023.dat"),
-             (3, "3623.dat"),
-             (4, "3710.dat"),
-             (6, "3666.dat"),
-             (8, "3460.dat"),
-             (10, "4477.dat"),
-              (12, "60479.dat")]    
+    parts = pd.read_csv("plates_colors.csv")
     
+    # TODO: kiszervezni fájlba!
     colors = [  
     ((9,19,29), 0), # BLACK
     ((0,85,191), 1), # BLUE
@@ -74,25 +68,12 @@ def reduce_partlist(image, plate_wid, plate_height, tile_plate):
         for i in range(0,img.size[0],plate_wid):
             picture.append((pixels[i,j], 1))
             cntr += 1
-     
+    
     # Főciklus, képtömb feldolgozása sorról sorra       
     for item in range(0,len(picture), num_wid):
         # Select a num_wid-long line from the generated picture
         line = picture[item: item + num_wid]
         
-        # Eredeti Lego part/color betöltése
-        # HINT: lehetne globális(abb)
-        divs = []
-        f = open("original_plates.col", "r")
-        original_colors = f.read()
-        f.close()
-        original_colors = original_colors.split("\n")
-        for color_line in original_colors:
-            color_codes = ()
-            for  color_code in color_line.split("  ")[1].split(" "):
-                color_codes += (int(color_code),)
-            divs.append((int(color_line.split("  ")[0]), (color_codes)))
-         
         # Itt cseréli az RGB értékeket MlCad színkódokra
         for part in range(len(line)):
             for color in range(len(colors)):
@@ -100,23 +81,22 @@ def reduce_partlist(image, plate_wid, plate_height, tile_plate):
                     line[part] = (colors[color][1], line[part][1])
         
         # Itt cseréli sorfolytonosan az elemeket nagyobbakra, ha az adott színű elem létezik
-        for div in divs:
-            color = div[1]
-            div = div[0]
+        for k in range(len(parts)):
+            color = parts.iat[-k,3].split(";")
+            div = parts.iat[-k,0]
             for p in range(len(line) - (div - 1)):
                 if len(line) > div:
                     part = line[p:p + div]
                     if len(part) > 0:
-                        if part.count(part[0]) == div and part[0][1] == 1:
-                            if part[0][0] in color:
-                                line[p:p + div] = [(line[p][0], div)]
-#        print len(line), item / num_wid
-        
+                        if part.count(part[0]) == div and part[0][1] == 1 and str(part[0][0]) in color:
+                            line[p:p + div] = [(line[p][0], div)]        
+#        
         # Itt cseréli ki a hosszakat érvényes Lego elemkódokra
+                    
         for part in range(len(line)):
             for partname in range(len(parts)):
-                if line[part][1] == parts[partname][0]:
-                    line[part] = (line[part][0], line[part][1], parts[partname][1])
+                if line[part][1] == parts.iat[partname,0]:
+                    line[part] = (line[part][0], line[part][1], parts.iat[partname,1])
                     
         #  Itt történik meg a tényleges ldr generálása
         x = 0
@@ -142,14 +122,16 @@ def reduce_partlist(image, plate_wid, plate_height, tile_plate):
     # Működési javaslat: partcode szerint rész df-re vágni és úgy kezelni!
     
    # Kiválasztja a megfelelő függvény(eke)t a bővebb finomításhoz
+    
     if tile_plate == False:
-        mlcad_df = reduce_with_bricks(mlcad_df)
+        mlcad_df = reduce_with_bricks(mlcad_df, parts)
         mlcad_df = compl_reducer(mlcad_df, parts)
-        mlcad_df = reduce_with_bricks(mlcad_df)
+        mlcad_df = reduce_with_bricks(mlcad_df, parts)
         mlcad_df = compl_reducer(mlcad_df, parts)
     else:
         print "csempeszoba"
   
+    
     # MlCad fájl sorait összeállító és a fájlt legeneráló rész
     for pos in range(len(mlcad_df)):
         mlcad_line = "1 " + str(mlcad_df.iat[pos,0]) + " " + str(mlcad_df.iat[pos,1]) + " " + str(mlcad_df.iat[pos,2]) + str(mlcad_df.iat[pos,3]) + mlcad_df.iat[pos,4] + "\n"
@@ -165,33 +147,21 @@ def reduce_partlist(image, plate_wid, plate_height, tile_plate):
     # Idáig másold át!
 
 # Egymás alatti hármas csoportokat von össze brick-ké, csak alapvető egyezést vizsgál
-def reduce_with_bricks(mlcad_df):
-    # Feltöltés valós brick/color értékekkel, megfelelő formára hozás
-    # HINT: lehetne globális/paraméter!
+def reduce_with_bricks(mlcad_df, parts):
     mlcad_df = mlcad_df.sort_values(['x', 'y']).reset_index(drop=True)
-    replace_parts = []
-    f = open("original_bricks.col", "r")
-    original_brick_colors = f.read()
-    f.close()
-    original_brick_colors = original_brick_colors.split("\n")
-    for brick_color_line in original_brick_colors:
-        brick_color_codes = ()
-        for  brick_color_code in brick_color_line.split("  ")[1].split(" "):
-            brick_color_codes += (int(brick_color_code),)
-        replace_parts.append((brick_color_line.split("  ")[0].split(" ")[0], brick_color_line.split("  ")[0].split(" ")[1], (brick_color_codes)))
-
     # Iteráció az elemkódokon, majd elemkódok szerint két részre vágja a df-et
     # Végül a törlendő elemeket eldobja, a két részt pedig összeilleszti      
-    for rep in range(len(replace_parts)):
-        smallplate_df = mlcad_df[mlcad_df['partcode'] == replace_parts[rep][1]]
-        useless_df = mlcad_df[mlcad_df['partcode'] != replace_parts[rep][1]]
+    for rep in range(len(parts)):
+        smallplate_df = mlcad_df[mlcad_df['partcode'] == parts.iat[rep,1]]
+        useless_df = mlcad_df[mlcad_df['partcode'] != parts.iat[rep,1]]
         for pos in range(len(smallplate_df) - 2):
-            if smallplate_df.iat[pos,4] == replace_parts[rep][1]:
+            if smallplate_df.iat[pos,4] == parts.iat[rep,1]:
                 if smallplate_df.iat[pos,2] + 8 == smallplate_df.iat[pos + 1 ,2] and (smallplate_df.iat[pos,2] + 16 == smallplate_df.iat[pos + 2 ,2]):
                     if smallplate_df.iat[pos,1] == smallplate_df.iat[pos + 1 ,1] and (smallplate_df.iat[pos,1] == smallplate_df.iat[pos + 2 ,1]):
                         if smallplate_df.iat[pos,0] == smallplate_df.iat[pos + 1,0] and (smallplate_df.iat[pos,0] == smallplate_df.iat[pos + 2,0]):
-                            if int(smallplate_df.iat[pos,0]) in replace_parts[rep][2]:
-                                smallplate_df.iat[pos,4] = replace_parts[rep][0]
+                            # HINT: index 3-ról 4-re változik!
+                            if smallplate_df.iat[pos,0] in parts.iat[rep,3].split(";"):
+                                smallplate_df.iat[pos,4] = parts.iat[rep,2]
                                 smallplate_df.iat[pos + 1,4] = "zero"
                                 smallplate_df.iat[pos + 2,4] = "zero"
         mlcad_df = smallplate_df.append(useless_df)
@@ -199,14 +169,13 @@ def reduce_with_bricks(mlcad_df):
     print len(mlcad_df), "a redukált alkatrészszám a brick-ek beszúrása után"
     return mlcad_df
 
-
 # TODO: részletesen megírni, EGYSZERŰSÍTENI, SZABÁLYOKAT KERESNI!
 # TODO: R E F A C T O R ! ! !
 def compl_reducer(mlcad_df, parts):
     for num in range(1,4):
-        smallpart = parts[0][1]
-        bigpart = parts[num][1]
-        changepart = parts[num - 1][1]
+        smallpart = parts.iat[0,1]
+        bigpart = parts.iat[num,1]
+        changepart = parts.iat[num - 1,1]
         x_diff = num * 10
         
         smallplate_df = mlcad_df[mlcad_df['partcode'] == smallpart]
