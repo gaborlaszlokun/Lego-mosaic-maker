@@ -7,6 +7,6 @@ Created on Tue Aug 02 12:37:04 2016
 
 import LMM as mg
 
-filename = "kimi.jpg"
+filename = "rapid.jpg"
 num_wid = 30
-mg.generate_mosaic(filename, num_wid, True)
+mg.generate_mosaic(filename, num_wid, False)

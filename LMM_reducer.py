@@ -124,10 +124,20 @@ def reduce_partlist(image, plate_wid, plate_height, tile_plate):
    # Kiválasztja a megfelelő függvény(eke)t a bővebb finomításhoz
     
     if tile_plate == False:
-        mlcad_df = reduce_with_bricks(mlcad_df, parts)
-        mlcad_df = compl_reducer(mlcad_df, parts)
-        mlcad_df = reduce_with_bricks(mlcad_df, parts)
-        mlcad_df = compl_reducer(mlcad_df, parts)
+        orig_mlcad_df = len(mlcad_df)
+        mod_mlcad_df = 0
+        while orig_mlcad_df != mod_mlcad_df:
+            print
+            orig_mlcad_df = len(mlcad_df)
+            mlcad_df = reduce_with_bricks(mlcad_df, parts)
+            if orig_mlcad_df == len(mlcad_df):
+                break
+            mlcad_df = compl_reducer(mlcad_df, parts)
+            mod_mlcad_df = len(mlcad_df)
+#        mlcad_df = reduce_with_bricks(mlcad_df, parts)
+#        mlcad_df = compl_reducer(mlcad_df, parts)
+#        mlcad_df = reduce_with_bricks(mlcad_df, parts)
+#        mlcad_df = compl_reducer(mlcad_df, parts)
     else:
         print "csempeszoba"
   
@@ -169,25 +179,130 @@ def reduce_with_bricks(mlcad_df, parts):
     print len(mlcad_df), "a redukált alkatrészszám a brick-ek beszúrása után"
     return mlcad_df
 
+## TODO: részletesen megírni, EGYSZERŰSÍTENI, SZABÁLYOKAT KERESNI!
+## TODO: R E F A C T O R ! ! !
+#def compl_reducer(mlcad_df, parts):
+#    for part in range(0,3):
+#        for num in range(part + 1,4):
+#            # HINT: külön csv a mit mire sorokkal! + elemtávolságok
+#            smallpart = parts.iat[part,1]
+#            changebrick = parts.iat[part,2]
+#            bigpart = parts.iat[num,1]
+#            changepart = parts.iat[num - (part + 1),1]
+#            x_diff = (parts.iat[num,0] - parts.iat[part,0]) * 10
+#            print smallpart, bigpart, part, num
+#            
+#            smallplate_df = mlcad_df[mlcad_df['partcode'] == smallpart]
+#            useless_df = mlcad_df[mlcad_df['partcode'] != smallpart]
+#            bigplate_df = useless_df[useless_df['partcode'] == bigpart]
+#            useless_df = useless_df[useless_df['partcode'] != bigpart]
+#            
+#            # Ha a nagy elem van alul
+#            for elem in range(len(smallplate_df)):
+#                item1_x = smallplate_df.iat[elem,1]
+#                item1_y = smallplate_df.iat[elem,2]
+#                item1_color = smallplate_df.iat[elem,0]
+#                if smallplate_df.iat[elem,4] == smallpart:
+#                    for in_elem in range(len(smallplate_df)):
+#                        if smallplate_df.iat[in_elem,4] == smallpart:
+#                            if smallplate_df.iat[in_elem,0] == item1_color and smallplate_df.iat[in_elem,1] == item1_x and smallplate_df.iat[in_elem,2] - 8 == item1_y:
+#                                for el in range(len(bigplate_df)):
+#                                    if bigplate_df.iat[el,0] == item1_color:
+#                                        if bigplate_df.iat[el,4] == bigpart:
+#                                            if abs(bigplate_df.iat[el,1] - item1_x) == x_diff:
+#                                                if bigplate_df.iat[el,2] - 16 == item1_y:                           
+#                                                    smallplate_df.iat[elem,4] = "zero" # Ez a zéró mindig zéró!
+#                                                    smallplate_df.iat[in_elem,2] = smallplate_df.iat[in_elem,2] - 8
+#                                                    smallplate_df.iat[in_elem,4] = changebrick
+##                                                    bigplate_df.iat[el,4] = "zero"
+#                                                    if bigplate_df.iat[el,1] - item1_x > 0:
+#                                                        bigplate_df.iat[el,1] = bigplate_df.iat[el,1] + (part + 1) * 10
+#                                                    else:
+#                                                        bigplate_df.iat[el,1] = bigplate_df.iat[el,1] - (part + 1) * 10
+#                                                    bigplate_df.iat[el,4] = changepart
+##                                                    smallplate_df.iat[in_elem,4] = "zero"
+#                    
+#            # Ha a nagy elem van felül
+#            for elem in range(len(smallplate_df)):
+#                item1_x = smallplate_df.iat[elem,1]
+#                item1_y = smallplate_df.iat[elem,2]
+#                item1_color = smallplate_df.iat[elem,0]
+#                if smallplate_df.iat[elem,4] == smallpart:
+#                    for in_elem in range(len(smallplate_df)):
+#                        if smallplate_df.iat[in_elem,4] == smallpart:
+#                            if smallplate_df.iat[in_elem,0] == item1_color and smallplate_df.iat[in_elem,1] == item1_x and smallplate_df.iat[in_elem,2] - 8 == item1_y:
+#                                for el in range(len(bigplate_df)):
+#                                    if bigplate_df.iat[el,0] == item1_color:
+#                                        if bigplate_df.iat[el,4] == bigpart:
+#                                            if abs(bigplate_df.iat[el,1] - item1_x) == x_diff:
+#                                                if bigplate_df.iat[el,2] + 8 == item1_y:                           
+#                                                    smallplate_df.iat[elem,4] = "zero" # Ez a zéró mindig zéró!
+#                                                    smallplate_df.iat[in_elem,2] = bigplate_df.iat[el,2]
+#                                                    smallplate_df.iat[in_elem,4] = changebrick
+##                                                    bigplate_df.iat[el,4] = "zero"
+#                                                    if bigplate_df.iat[el,1] - item1_x > 0:
+#                                                        bigplate_df.iat[el,1] = bigplate_df.iat[el,1] + (part + 1) * 10
+#                                                    else:
+#                                                        bigplate_df.iat[el,1] = bigplate_df.iat[el,1] - (part + 1) * 10
+#                                                    bigplate_df.iat[el,4] = changepart   
+##                                                    smallplate_df.iat[in_elem,4] = "zero"
+#             
+#            # Ha a nagy elem van középen
+#            for elem in range(len(smallplate_df)):
+#                item1_x = smallplate_df.iat[elem,1]
+#                item1_y = smallplate_df.iat[elem,2]
+#                item1_color = smallplate_df.iat[elem,0]
+#                if smallplate_df.iat[elem,4] == smallpart:
+#                    for in_elem in range(len(smallplate_df)):
+#                        if smallplate_df.iat[in_elem,4] == smallpart:
+#                            if smallplate_df.iat[in_elem,0] == item1_color and smallplate_df.iat[in_elem,1] == item1_x and smallplate_df.iat[in_elem,2] - 16 == item1_y:
+#                                for el in range(len(bigplate_df)):
+#                                    if bigplate_df.iat[el,0] == item1_color:
+#                                        if bigplate_df.iat[el,4] == bigpart:
+#                                            if abs(bigplate_df.iat[el,1] - item1_x) == x_diff:
+#                                                if bigplate_df.iat[el,2] - 8 == item1_y:                           
+#                                                    smallplate_df.iat[elem,4] = "zero" # Ez a zéró mindig zéró!
+#                                                    smallplate_df.iat[in_elem,2] = bigplate_df.iat[el,2] - 8
+#                                                    smallplate_df.iat[in_elem,4] = changebrick
+##                                                    bigplate_df.iat[el,4] = "zero"
+#                                                    if bigplate_df.iat[el,1] - item1_x > 0:
+#                                                        bigplate_df.iat[el,1] = bigplate_df.iat[el,1] + (part + 1) * 10
+#                                                    else:
+#                                                        bigplate_df.iat[el,1] = bigplate_df.iat[el,1] - (part + 1) * 10
+#                                                    bigplate_df.iat[el,4] = changepart   
+##                                                    smallplate_df.iat[in_elem,4] = "zero"
+#            
+#            smallplate_df = smallplate_df.append(useless_df)
+#            mlcad_df = smallplate_df.append(bigplate_df)
+#            mlcad_df = mlcad_df[mlcad_df['partcode'] != 'zero'] 
+#
+#    print len(mlcad_df), "a redukált alkatrészszám a bonyolultabb összevonások után"                                                   
+#    return mlcad_df
+
 # TODO: részletesen megírni, EGYSZERŰSÍTENI, SZABÁLYOKAT KERESNI!
 # TODO: R E F A C T O R ! ! !
 def compl_reducer(mlcad_df, parts):
-    for num in range(1,4):
-        smallpart = parts.iat[0,1]
-        bigpart = parts.iat[num,1]
-        changepart = parts.iat[num - 1,1]
-        x_diff = num * 10
+    changes = pd.read_csv("change_list.csv")
+    for change in range(len(changes)):
+        # HINT: külön csv a mit mire sorokkal! + elemtávolságok
+        smallpart = changes.iat[change,0]
+        changebrick = changes.iat[change,1]
+        bigpart = changes.iat[change,2]
+        changepart = changes.iat[change,3]
+        x_diff = changes.iat[change,4]
+        offset = changes.iat[change,5]
         
         smallplate_df = mlcad_df[mlcad_df['partcode'] == smallpart]
         useless_df = mlcad_df[mlcad_df['partcode'] != smallpart]
         bigplate_df = useless_df[useless_df['partcode'] == bigpart]
         useless_df = useless_df[useless_df['partcode'] != bigpart]
         
+        # Ha a nagy elem van alul
         for elem in range(len(smallplate_df)):
             item1_x = smallplate_df.iat[elem,1]
             item1_y = smallplate_df.iat[elem,2]
             item1_color = smallplate_df.iat[elem,0]
-            if  smallplate_df.iat[elem,4] == smallpart:
+            if smallplate_df.iat[elem,4] == smallpart:
                 for in_elem in range(len(smallplate_df)):
                     if smallplate_df.iat[in_elem,4] == smallpart:
                         if smallplate_df.iat[in_elem,0] == item1_color and smallplate_df.iat[in_elem,1] == item1_x and smallplate_df.iat[in_elem,2] - 8 == item1_y:
@@ -198,18 +313,18 @@ def compl_reducer(mlcad_df, parts):
                                             if bigplate_df.iat[el,2] - 16 == item1_y:                           
                                                 smallplate_df.iat[elem,4] = "zero" # Ez a zéró mindig zéró!
                                                 smallplate_df.iat[in_elem,2] = smallplate_df.iat[in_elem,2] - 8
-                                                smallplate_df.iat[in_elem,4] = "3005.dat"
-    #                                            bigplate_df.iat[el,4] = "zero"
+                                                smallplate_df.iat[in_elem,4] = changebrick
+#                                                    bigplate_df.iat[el,4] = "zero"
                                                 if bigplate_df.iat[el,1] - item1_x > 0:
-                                                    bigplate_df.iat[el,1] = bigplate_df.iat[el,1] + 10
+                                                    # HINT: eltolásokat átértelmezni!
+                                                    bigplate_df.iat[el,1] = bigplate_df.iat[el,1] + offset
                                                 else:
-                                                    bigplate_df.iat[el,1] = bigplate_df.iat[el,1] - 10
+                                                    # HINT: eltolásokat átértelmezni!
+                                                    bigplate_df.iat[el,1] = bigplate_df.iat[el,1] - offset
                                                 bigplate_df.iat[el,4] = changepart
-    #                                            smallplate_df.iat[in_elem,4] = "zero"
-                                                
-#                                                print bigpart, "csere", bigplate_df.iat[el,0], " a szín"
-                                                                    
-     
+#                                                    smallplate_df.iat[in_elem,4] = "zero"
+                
+        # Ha a nagy elem van felül
         for elem in range(len(smallplate_df)):
             item1_x = smallplate_df.iat[elem,1]
             item1_y = smallplate_df.iat[elem,2]
@@ -223,19 +338,42 @@ def compl_reducer(mlcad_df, parts):
                                     if bigplate_df.iat[el,4] == bigpart:
                                         if abs(bigplate_df.iat[el,1] - item1_x) == x_diff:
                                             if bigplate_df.iat[el,2] + 8 == item1_y:                           
-    #                                            smallplate_df.iat[elem,4] = "zero" # Ez a zéró mindig zéró!
+                                                smallplate_df.iat[elem,4] = "zero" # Ez a zéró mindig zéró!
                                                 smallplate_df.iat[in_elem,2] = bigplate_df.iat[el,2]
-                                                smallplate_df.iat[in_elem,4] = "3005.dat"
-    #                                            bigplate_df.iat[el,4] = "zero"
+                                                smallplate_df.iat[in_elem,4] = changebrick
+#                                                    bigplate_df.iat[el,4] = "zero"
                                                 if bigplate_df.iat[el,1] - item1_x > 0:
-                                                    bigplate_df.iat[el,1] = bigplate_df.iat[el,1] + 10
+                                                    bigplate_df.iat[el,1] = bigplate_df.iat[el,1] + offset
                                                 else:
-                                                    bigplate_df.iat[el,1] = bigplate_df.iat[el,1] - 10
+                                                    bigplate_df.iat[el,1] = bigplate_df.iat[el,1] - offset
                                                 bigplate_df.iat[el,4] = changepart   
-    #                                            smallplate_df.iat[in_elem,4] = "zero"
-                                                
-#                                                print bigpart, "csere", bigplate_df.iat[el,0], " a szín"
-           
+#                                                    smallplate_df.iat[in_elem,4] = "zero"
+         
+        # Ha a nagy elem van középen
+        for elem in range(len(smallplate_df)):
+            item1_x = smallplate_df.iat[elem,1]
+            item1_y = smallplate_df.iat[elem,2]
+            item1_color = smallplate_df.iat[elem,0]
+            if smallplate_df.iat[elem,4] == smallpart:
+                for in_elem in range(len(smallplate_df)):
+                    if smallplate_df.iat[in_elem,4] == smallpart:
+                        if smallplate_df.iat[in_elem,0] == item1_color and smallplate_df.iat[in_elem,1] == item1_x and smallplate_df.iat[in_elem,2] - 16 == item1_y:
+                            for el in range(len(bigplate_df)):
+                                if bigplate_df.iat[el,0] == item1_color:
+                                    if bigplate_df.iat[el,4] == bigpart:
+                                        if abs(bigplate_df.iat[el,1] - item1_x) == x_diff:
+                                            if bigplate_df.iat[el,2] - 8 == item1_y:                           
+                                                smallplate_df.iat[elem,4] = "zero" # Ez a zéró mindig zéró!
+                                                smallplate_df.iat[in_elem,2] = bigplate_df.iat[el,2] - 8
+                                                smallplate_df.iat[in_elem,4] = changebrick
+#                                                    bigplate_df.iat[el,4] = "zero"
+                                                if bigplate_df.iat[el,1] - item1_x > 0:
+                                                    bigplate_df.iat[el,1] = bigplate_df.iat[el,1] + offset
+                                                else:
+                                                    bigplate_df.iat[el,1] = bigplate_df.iat[el,1] - offset
+                                                bigplate_df.iat[el,4] = changepart   
+#                                                    smallplate_df.iat[in_elem,4] = "zero"
+        
         smallplate_df = smallplate_df.append(useless_df)
         mlcad_df = smallplate_df.append(bigplate_df)
         mlcad_df = mlcad_df[mlcad_df['partcode'] != 'zero'] 
@@ -243,13 +381,13 @@ def compl_reducer(mlcad_df, parts):
     print len(mlcad_df), "a redukált alkatrészszám a bonyolultabb összevonások után"                                                   
     return mlcad_df
 
-
 # Usage
+
 img = "plate_30_kimi.jpg"
 reduce_partlist(img, 30, 12, False)
 
 #img = "plate_40_albert.jpg"
 #reduce_partlist(img, 15, 6, False)
 
-#img = "tile_20_me.jpg"
-#reduce_partlist(img, 30, 30, True)
+#img = "plate_40_me.jpg"
+#reduce_partlist(img, 15, 6, False)
